@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-do-List</title>
+</head>
+<body>
+    <h1 class="title">Add Items</h1>
+    <form id="addform" class="form-inline mb-3">
+        <input type="text" class="form-control mr-2" id="item1" placeholder="name">
+        <input type="text" class="form-control mr-2" id="item2" placeholder="Description">
+        <button type="submit">Add Item</button>
+    </form>
+    <h2 class="title">Todo-Remaining</h2>
+    <ul id="list-of-item1" class="list-group"> </ul>
+    <h2 class="title">Todo Done</h2>
+    <ul id="list-of-item2" class="list-group"></ul>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
+    <script>
+        async function savetocrudcrud(event){
+            event.preventDefault();
+            const todoName = document.getElementById("item1").value;
+            const description = document.getElementById("item2").value;
+            var obj = {
+                todoName,
+                description
+            }
+            document.getElementById("item1").value = "";
+            document.getElementById("item2").value = "";
+            try {
+                const response = await axios.post("https://crudcrud.com/api/3e340d9216ee499bb967fa6b64ceee5e/todolist", obj);
+                const newTodo = response.data;
+                AddtodoRemaining(newTodo);
+            } catch (error) {
+                console.error("Error adding todo:", error);
+            }
+        }
+
+        function AddtodoRemaining(userdata){
+            const parentelem = document.getElementById('list-of-item1');
+            const childelem = document.createElement('li'); // Fixed: 'li' should be in quotes as a string
+            childelem.setAttribute("id", userdata._id);
+            childelem.textContent = userdata.todoName;
+            
+            const tickbtn = document.createElement('input');
+            tickbtn.type = 'button';
+            tickbtn.value = "✔";
+            tickbtn.onclick = () => {
+                const obj = {
+                    todoName: userdata.todoName,
+                    description: userdata.description
+                };
+                axios.post("https://crudcrud.com/api/3e340d9216ee499bb967fa6b64ceee5e/todolist", obj)
+                    .then((res) => {
+                        AddtoTodoDone(userdata);
+                        axios.delete(`https://crudcrud.com/api/3e340d9216ee499bb967fa6b64ceee5e/todolist/${userdata._id}`)
+                            .then(() => {
+                                parentelem.removeChild(childelem);
+                            })
+                            .catch((err) => console.log(err));
+                    })
+                    .catch((err) => console.log("err in post"));
+            };
+            
+            const deletebtn = document.createElement('input');
+            deletebtn.type = 'button';
+            deletebtn.value = "X";
+            deletebtn.onclick = () => {
+                axios.delete(`https://crudcrud.com/api/3e340d9216ee499bb967fa6b64ceee5e/todolist/${userdata._id}`)
+                    .then(() => {
+                        parentelem.removeChild(childelem);
+                    })
+                    .catch((err) => console.log(err));
+            };
+            
+            childelem.appendChild(tickbtn);
+            childelem.appendChild(deletebtn);
+            parentelem.appendChild(childelem);
+        }
+        
+        function AddtoTodoDone(userData){
+            const Parentelem = document.getElementById('list-of-item2');
+            const ChildElem = document.createElement('li'); // Fixed: 'li' should be in quotes as a string
+            ChildElem.setAttribute('id', userData._id);
+            ChildElem.textContent = userData.todoName + '-' + userData.description;
+            const donebtn = document.createElement('input');
+            donebtn.type = 'button';
+            donebtn.value = 'Done';
+            ChildElem.appendChild(donebtn);
+            Parentelem.appendChild(ChildElem);
+        }
+        
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const response1 = await axios.get("https://crudcrud.com/api/3e340d9216ee499bb967fa6b64ceee5e/todolist");
+                const response2 = await axios.get("https://crudcrud.com/api/3e340d9216ee499bb967fa6b64ceee5e/todolist");
+                for (var i = 0; i < response1.data.length; i++) {
+                    AddtodoRemaining(response1.data[i]);
+                }
+                for (var i = 0; i < response2.data.length; i++) {
+                    AddtoTodoDone(response2.data[i]);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        });
+        document.getElementById("addform").addEventListener("submit", savetocrudcrud);
+    </script>
+</body>
+</html>
